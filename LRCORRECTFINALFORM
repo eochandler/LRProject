@@ -1,0 +1,176 @@
+---
+title: "372_Final_Project"
+author: "Annika Cowen/Elijah Chandler"
+date: "11/25/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#
+
+data2008 <- read.csv("2007-2018-PIT-Counts-by-State/2008-Table 1.csv")
+#summary(data2008)
+
+data2018 <- read.csv("2007-2018-PIT-Counts-by-State/2018-Table 1.csv")
+#summary(data2018)
+
+```
+```{r}
+how.many.nas2008 <- sapply(data2008, function(x) sum(is.na(x)))
+how.many.nas2018 <- sapply(data2018, function(x) sum(is.na(x)))
+how.many.nas2008
+how.many.nas2018
+#No NA's come out in any of the data so we shall proceed
+```
+
+```{r}
+#finding the total number of homeless people
+
+x <- data2008$Overall.Homeless..2008
+y <- data2018$Overall.Homeless..2018
+
+x
+y
+```
+
+
+#go thorugh variables and make sure more than fifty percent are not equal to zero
+#we shall also examine each variabldz  standard deviation to see if any variables are not important 
+```{r}
+#2008
+#finding the coeficients 
+numeric.data2008 <- sapply(data2008, as.numeric)
+means2008 <- colMeans(numeric.data2008)
+sds2008 <- apply(numeric.data2008, 2, sd)
+coef.variation2008 <- (sds2008/means2008)
+head(coef.variation2008)
+```
+
+```{r}
+#only keeping the values with a variantion that is above .05
+indx.vars.keep2008 <- which(coef.variation2008 > 0.05)
+data2008.cleaned <- data2008[, indx.vars.keep2008]
+head(data2008.cleaned)
+```
+
+```{r}
+#remove the state column becuase it doesn't matter
+data2008.cleanednostate <- data2008.cleaned[,-c( 0,1)]
+#head(data2008.cleanednostate)
+
+#calculate the variance of leftover data and remove all that have too low of a variance
+data2008.variance.numeric <- sapply(data2008.cleaned, function(x) var(as.numeric(x)))
+#head(data2008.variance.numeric)
+
+data2008.variance.numeric.rem <- which(data2008.variance.numeric < .01)
+head(data2008.variance.numeric.rem)
+
+
+#No variance is below 0.01 so we can move on to 2018
+```
+
+```{r}
+#2018
+numeric.data2018 <- sapply(data2018, as.numeric)
+means2018 <- colMeans(numeric.data2018)
+sds2018 <- apply(numeric.data2018, 2, sd)
+coef.variation2018 <- sds2018/means2018
+head(coef.variation2018)
+```
+
+```{r}
+
+#only keeping the values with a variantion that is above .05
+indx.vars.keep2018 <- which(coef.variation2018 > 0.05)
+data2018.cleaned <- data2018[, indx.vars.keep2018]
+head(data2008.cleaned)
+```
+
+```{r}
+#removing the state column
+data2018.cleanednostate <- data2018[, -c( 0,1)]
+#head(data2018.cleanednostate)
+
+#calculate the variance of leftover data and remove all that have too low of a variance
+data2018.variance.numeric <- sapply(data2018.cleanednostate, function(x) var(as.numeric(x)))
+#head(data2018.variance.numeric)
+
+data2018.variance.numeric.rem <- which(data2018.variance.numeric < .01)
+data2018.variance.numeric.rem
+#No variance is below 0 in this data set either so we are all set to proceed with regression
+
+```
+
+
+```{r}
+#2008
+
+factors2008 <- sapply(data2008.cleanednostate, is.factor)
+data2008.cleanednostate[factors2008] <- lapply(data2008.cleanednostate[factors2008], function(x) as.numeric(x))
+
+Homelessness2008 <- data2008.cleanednostate$Overall.Homeless..2008
+sum(Homelessness2008, na.rm = FALSE)
+Homelessness2008
+
+```
+
+
+
+```{r}
+#2018
+
+factors2018 <- sapply(data2018.cleanednostate, is.factor)
+data2018.cleanednostate[factors2018] <- lapply(data2018.cleanednostate[factors2018], function(x) as.numeric(x))
+
+Homelessness2018 <- data2018.cleanednostate$Overall.Homeless..2018
+sum(Homelessness2018)
+sum(data2018.cleanednostate$Overall.Homeless..2018)
+
+```
+
+
+```{r}
+pairs(~Overall.Homeless..2008 + Sheltered.Total.Homeless..2008 + Unsheltered.Homeless..2008+  Homeless.Individuals..2008 + Sheltered.Total.Homeless.Individuals..2008 + Homeless.People.in.Families..2008 ,data = data2008.cleanednostate, "Scatter plots of important variables")
+```
+
+#Regression begins
+```{r}
+#Now we can see the values that have the biggest influence on the total number of homeless people
+
+#2008
+reg2008 <- lm(Homelessness2008 ~., data = data2008.cleanednostate)
+#reg2008
+
+plot(reg2008)
+
+#store the summary and coefficients
+summary.data2008 <- summary(reg2008)
+#summary.data2008
+
+coef2008 <- reg2008$coefficients
+#coef2008
+
+#Now we can see the values that have the biggest influence on the total number of homeless people
+head(sort(coef2008, decreasing = TRUE), 25)
+```
+
+```{r}
+
+reg2018 <- lm(Homelessness2018 ~., data = data2018.cleanednostate)
+
+#store the summary and coefficients
+summary.data2018 <- summary(reg2018)
+#summary.data2018
+
+coef2018 <- reg2018$coefficients
+#coef2018
+
+#Now we can see the values that have the biggest influence on the total number of homeless people
+head(sort(coef2018, decreasing = TRUE), 25)
+
+```
+
